@@ -1,54 +1,107 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import Search from "../components/Search";
-import beersJSON from "./../assets/beers.json";
-
-
+import axios from 'axios';
 
 function AllBeersPage() {
-  // Mock initial state, to be replaced by data from the API. Once you retrieve the list of beers from the Beers API store it in this state variable.
-  const [beers, setBeers] = useState(beersJSON);
+  const [beers, setBeers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typingTimeout, setTypingTimeout] = useState(null); // Timeout to manage typing delay
 
+  // Function to fetch beers based on the query
+  const fetchBeers = async (query) => {
+    try {
+      setLoading(true);
+      let url = `https://ih-beers-api2.herokuapp.com/beers`;
 
+      // If there's a search query, modify the URL for searching
+      if (query) {
+        url = `https://ih-beers-api2.herokuapp.com/beers/search?q=${query}`;
+      }
 
-  // TASKS:
-  // 1. Set up an effect hook to make a request to the Beers API and get a list with all the beers.
-  // 2. Use axios to make a HTTP request.
-  // 3. Use the response data from the Beers API to update the state variable.
+      const response = await axios.get(url);
+      setBeers(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching beers:', error);
+      setError('Failed to fetch beers details');
+      setLoading(false);
+    }
+  };
 
+  // Effect to fetch all beers on initial mount
+  useEffect(() => {
+    fetchBeers(""); // Fetch all beers initially
+  }, []);
 
+  // Handler for search input changes
+  const handleSearch = (event) => {
+    const query = event.target.value;
 
-  // The logic and the structure for the page showing the list of beers. You can leave this as it is for now.
+    // Clear the existing timeout to prevent excessive API calls while typing
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+
+    // Set a new timeout to trigger the API call after a longer delay
+    const newTimeout = setTimeout(() => {
+      setSearchQuery(query);
+    }, 1000); // Increased delay to 1000ms to wait for user to finish typing comfortably
+
+    setTypingTimeout(newTimeout);
+  };
+
+  // Effect to fetch beers when search query changes
+  useEffect(() => {
+    fetchBeers(searchQuery);
+  }, [searchQuery]);
+
+  // Render loading message if data is still being fetched
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // Render error message if an error occurred during the fetch
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  // Render list of beers stacked vertically in the center
   return (
     <>
-      <Search />
+      <Search handleSearch={handleSearch} />
 
-      <div className="d-inline-flex flex-wrap justify-content-center align-items-center w-100 p-4">
-        {beers &&
-          beers.map((beer, i) => {
+      <div className="beer-list d-flex flex-column align-items-center p-4">
+        {beers.length > 0 ? (
+          beers.map((Beer, i) => {
             return (
-              <div key={i}>
-                <Link to={"/beers/" + beer._id}>
-                  <div className="card m-2 p-2 text-center" style={{ width: "24rem", height: "18rem" }}>
-                    <div className="card-body">
-                      <img
-                        src={beer.image_url}
-                        style={{ height: "6rem" }}
-                        alt={"image of" + beer.name}
-                      />
-                      <h5 className="card-title text-truncate mt-2">{beer.name}</h5>
-                      <h6 className="card-subtitle mb-3 text-muted">
-                        <em>{beer.tagline}</em>
+              <div key={i} className="beer-card mb-4" style={{ width: "500px" }}>
+                <Link to={"/beers/" + Beer._id} style={{ textDecoration: "none", color: "inherit" }}>
+                  <div className="card p-3 text-center">
+                    <img
+                      src={Beer.image_url}
+                      style={{ height: "150px", margin: "0 auto" }}
+                      alt={"Image of " + Beer.name}
+                    />
+                    <div className="beer-info mt-3">
+                      <h5 className="card-title">{Beer.name}</h5>
+                      <h6 className="card-subtitle mb-2 text-muted">
+                        <em>{Beer.tagline}</em>
                       </h6>
                       <p className="card-text">
-                        Created by: {beer.contributed_by}
+                        Created by: {Beer.contributed_by}
                       </p>
                     </div>
                   </div>
                 </Link>
               </div>
             );
-          })}
+          })
+        ) : (
+          <p>No beers found.</p>
+        )}
       </div>
     </>
   );

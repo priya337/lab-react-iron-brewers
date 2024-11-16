@@ -1,25 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import beersJSON from "./../assets/beers.json";
-
+import axios from 'axios';
 
 function RandomBeersPage() {
-  // Mock initial state, to be replaced by data from the Beers API. Store the beer info retrieved from the Beers API in this state variable.
-  const [randomBeer, setRandomBeer] = useState(beersJSON[0]);
+  // State to store the details of the random beer
+  const [randomBeer, setRandomBeer] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // React Router hook for navigation. We use it for the back button. You can leave this as it is.
+  // React Router hook for navigation (back button)
   const navigate = useNavigate();
 
+  // useEffect hook to fetch a random beer when the component mounts
+  useEffect(() => {
+    async function fetchRandomBeer() {
+      try {
+        const { data } = await axios.get('https://ih-beers-api2.herokuapp.com/beers/random');
+        setRandomBeer(data); // Set the state with the fetched beer data
+        setLoading(false); // Set loading to false after data is fetched
+      } catch (error) {
+        console.error('Error fetching random beer:', error);
+        setError('Failed to fetch random beer');
+        setLoading(false); // Set loading to false if there's an error
+      }
+    }
+    fetchRandomBeer();
+  }, []); // Run the effect only once when the component mounts
 
-  
-  // TASKS:
-  // 1. Set up an effect hook to make a request for a random beer from the Beers API.
-  // 2. Use axios to make a HTTP request.
-  // 3. Use the response data from the Beers API to update the state variable.
+  // Render loading message if data is still being fetched
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
+  // Render error message if an error occurred during the fetch
+  if (error) {
+    return <div>{error}</div>;
+  }
 
-
-  // The logic and the structure for the page showing the random beer. You can leave this as it is.
+  // Render the random beer details
   return (
     <div className="d-inline-flex flex-column justify-content-center align-items-center w-100 p-4">
       <h2>Random Beer</h2>
@@ -32,14 +50,19 @@ function RandomBeersPage() {
             height="300px"
             width="auto"
           />
-          <h3>{randomBeer.name}</h3>
-          <p>{randomBeer.tagline}</p>
-          <p>Attenuation level: {randomBeer.attenuation_level}</p>
-          <p>Description: {randomBeer.description}</p>
-          <p>Created by: {randomBeer.contributed_by}</p>
+          <h3 className="mt-4">{randomBeer.name}</h3>
+          <p className="text-muted">{randomBeer.tagline}</p>
+          <p><strong>Attenuation level:</strong> {randomBeer.attenuation_level}</p>
+
+          {/* Description wrapped in a div with styling for constrained width */}
+          <div className="beer-description mt-3" style={{ maxWidth: "600px", margin: "0 auto", textAlign: "center" }}>
+            <p><strong>Description:</strong> {randomBeer.description}</p>
+          </div>
+          
+          <p><strong>Created by:</strong> {randomBeer.contributed_by}</p>
 
           <button
-            className="btn btn-primary"
+            className="btn btn-primary mt-4"
             onClick={() => {
               navigate(-1);
             }}

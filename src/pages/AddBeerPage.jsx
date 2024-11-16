@@ -1,7 +1,9 @@
 import { useState } from "react";
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function AddBeerPage() {
-  // State variables to store the values of the form inputs. You can leave these as they are.
+  // State variables to store the values of the form inputs.
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
@@ -11,7 +13,10 @@ function AddBeerPage() {
   const [attenuationLevel, setAttenuationLevel] = useState(0);
   const [contributedBy, setContributedBy] = useState("");
 
-  // Handler functions for the form inputs. You can leave these as they are.
+  // React Router hook for navigation
+  const navigate = useNavigate();
+
+  // Handler functions for the form inputs
   const handleName = (e) => setName(e.target.value);
   const handleTagline = (e) => setTagline(e.target.value);
   const handleDescription = (e) => setDescription(e.target.value);
@@ -21,20 +26,39 @@ function AddBeerPage() {
   const handleAttenuationLevel = (e) => setAttenuationLevel(e.target.value);
   const handleContributedBy = (e) => setContributedBy(e.target.value);
 
+  // Function to handle the form submission
+  const handleSubmit = (e) => {
+    e.preventDefault(); // Prevent the default page reload on form submission
 
+    // Construct the new beer object to be sent to the API
+    const newBeer = {
+      name: name,
+      tagline: tagline,
+      description: description,
+      image_url: imageUrl,
+      first_brewed: firstBrewed,
+      brewers_tips: brewersTips,
+      attenuation_level: Number(attenuationLevel), // Ensure the value is of type Number
+      contributed_by: contributedBy,
+    };
 
-  // TASK:
-  // 1. Create a function to handle the form submission and send the form data to the Beers API to create a new beer.
-  // 2. Use axios to make a POST request to the Beers API.
-  // 3. Once the beer is created, navigate the user to the page showing the list of all beers.
+    // Make a POST request to add the new beer
+    axios.post('https://ih-beers-api2.herokuapp.com/beers/new', newBeer)
+      .then((response) => {
+        console.log('Beer added successfully:', response.data);
+        // Redirect the user to the list of beers
+        navigate('/beers');
+      })
+      .catch((error) => {
+        console.error('Error adding beer:', error);
+      });
+  };
 
-
-
-  // Structure and the content of the page showing the form for adding a new beer. You can leave this as it is.
+  // Structure and the content of the page showing the form for adding a new beer
   return (
     <>
       <div className="d-inline-flex flex-column w-100 p-4">
-        <form>
+        <form onSubmit={handleSubmit}>
           <label>Name</label>
           <input
             className="form-control mb-4"
@@ -43,6 +67,7 @@ function AddBeerPage() {
             placeholder="Beer Name"
             value={name}
             onChange={handleName}
+            required
           />
           <label>Tagline</label>
           <input
@@ -52,6 +77,7 @@ function AddBeerPage() {
             placeholder="Beer Tagline"
             value={tagline}
             onChange={handleTagline}
+            required
           />
 
           <label className="form-label">Description</label>
@@ -63,6 +89,7 @@ function AddBeerPage() {
             rows="3"
             value={description}
             onChange={handleDescription}
+            required
           ></textarea>
 
           <label>Image</label>
@@ -90,7 +117,7 @@ function AddBeerPage() {
             className="form-control mb-4"
             type="text"
             name="brewersTips"
-            placeholder="..."
+            placeholder="Brewers Tips"
             value={brewersTips}
             onChange={handleBrewersTips}
           />
@@ -110,6 +137,7 @@ function AddBeerPage() {
               onChange={handleAttenuationLevel}
               min={0}
               max={100}
+              required
             />
           </div>
 
@@ -122,7 +150,7 @@ function AddBeerPage() {
             value={contributedBy}
             onChange={handleContributedBy}
           />
-          <button className="btn btn-primary btn-round">Add Beer</button>
+          <button type="submit" className="btn btn-primary btn-round">Add Beer</button>
         </form>
       </div>
     </>
